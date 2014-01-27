@@ -1,0 +1,86 @@
+<html>
+
+    <head>
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+        <title>List of Timeslots</title>
+
+        <!-- Embedded CSS Styles -->
+        <style>
+            #time-list {
+                margin-left: 70px;
+                width: 300px;
+            }
+            .time-date {
+                padding-bottom: 20px;
+                font-size: 18px;
+                font-weight: bold;
+            }
+            .time-slot {
+                padding-bottom: 4px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h2 style="margin-left: 70px;">List of Timeslots by Date</h2><br>
+        <div id="time-list"></div>
+    </body>
+
+<script type="text/javascript">
+    $(window).load(function(){
+        $.ajax({
+            type: 'GET',
+            // API endpoint returns JSON
+            datatype: 'json',
+            // API endpoint for timeslots
+            url: 'https://api-dev.wixcc.com/pubtimeslots/?categoryid=20',
+            // On success, print Days and their corresponding timeslots to DOM
+            success: function(d){
+                // Proceed if API response object contains 'days' key and no Error Message
+                if ('days' in d && d['error_msg'] === 'OK') {
+                    var timeslots = d['days'];
+
+                    for (var i=0; i<timeslots.length; i++) {
+                        // Create new Date time
+                        var t = (new Date(timeslots[i]['date']) + '').split(' ');
+                        // Reformat Date string: "Mon, Jan 27 2014"
+                        var localDate = [t[0] + ',', t[1], t[2], t[3]].join(' ').toString();
+                        // Create div for Date, then add to DOM
+                        $('<div/>')
+                            .html(localDate)
+                            .appendTo($('#time-list'))
+                            .addClass('time-date')
+
+                        for (var u=0; u<timeslots[i]['slots'].length; u++) {
+                            // Create new Date times adjusted to user's time zone from UTC in API response
+                            var v = (new Date(timeslots[i]['slots'][u]['start']) + '').split(' ');
+                            var w = (new Date(timeslots[i]['slots'][u]['stop'])+ '').split(' ');
+                            // Reformat Time strings: "15:00:00 (PST)"
+                            var formatStart = [v[4], v[6]].join(' ').toString();
+                            var formatStop = [w[4], w[6]].join(' ').toString();
+                            // Create div for Start and Stop times, then add to DOM
+                            $('<div/>')
+                                .html(formatStart + ' - ' + formatStop + '<br>')
+                                .appendTo($('#time-list'))
+                                .addClass('time-slot')
+                        }
+                        // Use horizontal rule and line breaks to separate Dates
+                        $('#time-list').append('<br><hr><br>');
+                    }
+                } else {
+                    // On successful request but missing data, print error message
+                    $('#time-list').append('<p>There was an error with your request, please try again.</p>');
+                }
+            },
+            // On error, return error information
+            error: function (XMLHttpRequest, textStatus, errorThrown){
+                // Retrieve XHR error message
+                var err = eval('(' + XMLHttpRequest.responseText + ')');
+                $('#time-list').append('<p>Cannot connect to Timestamp service, error message: ' 
+                    + err.Message + ' Please try again.</p>');
+            }
+        });
+    });
+</script>
+
+</html>
